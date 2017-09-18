@@ -1,10 +1,11 @@
-class Stepper
-  FILE = "current_step"
+require './gpio'
 
-  def initialize(steps_per_rev:, pins: [0, 1, 2, 3])
-    @steps_per_rev = steps_per_rev
+class Stepper
+  def initialize(max_steps:, pins: [0, 1, 2, 3], file: "current_step")
+    @max_steps = max_steps
     @pins = pins
-    @current_step = File.exists?(FILE) ? File.read(FILE).to_i : 0
+    @file = file
+    @current_step = File.exists?(@file) ? File.read(@file).to_i : 0
     initialise_gpio
   end
 
@@ -17,10 +18,8 @@ class Stepper
   end
 
   def set_percentage(percentage)
-    desired_step = (percentage * @steps_per_rev).round
-    puts "desired step = #{desired_step}"
+    desired_step = (percentage * @max_steps).round
     steps = desired_step - @current_step
-    puts "steps = #{steps}"
     if steps > 0
       steps.times { forward }
     elsif steps < 0
@@ -28,36 +27,30 @@ class Stepper
     end
   end
 
+  def reset
+    set_percentage 0
+  end
+
   private
 
   def initialise_gpio
     @pins.each do |pin|
-      `fast-gpio set-output #{pin}`
+      GPIO.set_output pin
     end
   end
 
-  def step(increment)
-    case @current_step % 4
-    when 0
-      set_pins(0, 0, 0, 1)
-    when 1
-      set_pins(0, 0, 1, 0)
-    when 2
-      set_pins(0, 1, 0, 0)
-    when 3
-      set_pins(1, 0, 0, 0)
+  def step(increment = 1)
+    new_pins = @pins.each_with_index.map do |pin, index|
+      index == (@current_step % @pins.size) ? 1 : 0
     end
+    set_pins(*new_pins)
     @current_step += increment
-    File.write FILE, @current_step
-  end
-
-  def set_pin(pin, value)
-    `fast-gpio set #{pin} #{value}`
+    File.write @file, @current_step
   end
 
   def set_pins(*pins)
     pins.each_with_index do |value, index|
-      set_pin @pins[index], value
+      GPIO.set @pins[index], value
     end
   end
 end
