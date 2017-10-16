@@ -1,17 +1,13 @@
-PATH
-  remote: ../onion_omega
-  specs:
-    onion_omega (0.1.0)
-
 GEM
   remote: https://rubygems.org/
   specs:
+    onion_omega (0.1.0)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  onion_omega!
+  onion_omega
 
 BUNDLED WITH
    1.14.6
